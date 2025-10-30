@@ -17,3 +17,15 @@ def pca_feature_selection(df, features, n_components=3):
         return list(top_features)
     except Exception:
         return []
+
+def lasso_feature_selection(df, features, target_col, alpha=0.01):
+
+    try:
+        X = df[features].values
+        y = df[target_col].values
+        lasso = Lasso(alpha=alpha, max_iter=10000, random_state=42)
+        lasso.fit(X, y)
+        selected = [features[i] for i,coef in enumerate(lasso.coef_) if abs(coef) > 1e-6]
+        return selected
+    except Exception:
+        return []
