@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+ <head>
+  <meta charset="utf-8" />
+  <title>نتائج اختيار الميزات</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  
+  
+ </head>
+ <body>
+     <nav class="navbar">
+         <div class="logo">MegaGA</div>
+     </nav>
+        </nav>
+  <div class="background-container">
+        <div class="overlay"></div>
+    </div>
+  <div class="container">
+   <h1> نتائج تحليل الملف : <span>{{ filename }}</span></h1>
+   <h2>عمود الهدف : <span>{{ target }}</span> </h2>
+   <p>عدد الميزات الأصلي : <span>{{ num_features }}</span></p>
+
+   <div class="card">
+    <h3>أهم 15 ميزة حسب MI</h3>
+    {% if importance_top10 %}
+    <table>
+     <thead>
+      <tr>
+       <th>الميزة</th>
+       <th>MI</th>
+       <th>Corr</th>
+       <th>n_unique</th>
+      </tr>
+     </thead>
+     <tbody>
+      {% for row in importance_top10 %}
+      <tr>
+       <td>{{ row.feature }}</td>
+       <td>{{ "%.6f"|format(row.mi) }}</td>
+       <td>{{ "%.6f"|format(row.corr_with_target) }}</td>
+       <td>{{ row.n_unique }}</td>
+      </tr>
+      {% endfor %}
+     </tbody>
+    </table>
+    {% else %}
+    <p>لا توجد بيانات تشخيصية.</p>
+    {% endif %}
+   </div>
+
+   <div class="card">
+    <h3>الميزات المختارة (الخوارزمية الجينية)</h3>
+    {% if ga_features %}
+    <ul>
+     {% for f in ga_features %}
+     <li>{{ f }}</li>
+     {% endfor %}
+    </ul>
+    {% else %}
+    <p>لم يتم اختيار أي ميزة.</p>
+    {% endif %}
+   </div>
+
+   <div class="card">
+    <h3>الطرق التقليدية</h3>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap">
+     <div class="tradi">
+      <h4>Lasso</h4>
+      {% if lasso_features %}
+      <ul>
+       {% for f in lasso_features %}
+       <li>{{ f }}</li>
+       {% endfor %}
+      </ul>
+      {% else %}
+      <p>لا توجد نتائج.</p>
+      {% endif %}
+     </div>
+     <div  class="tradi">
+      <h4>PCA</h4>
+      {% if pca_features %}
+      <ul>
+       {% for f in pca_features %}
+       <li>{{ f }}</li>
+       {% endfor %}
+      </ul>
+      {% else %}
+      <p>لا توجد نتائج.</p>
+      {% endif %}
+     </div>
+     <div class="tradi">
+      <h4>Chi2</h4>
+      {% if chi2_features %}
+      <ul>
+       {% for f in chi2_features %}
+       <li>{{ f }}</li>
+       {% endfor %}
+      </ul>
+      {% else %}
+      <p>لا توجد نتائج (أو أن المهمة انحدار).</p>
+      {% endif %}
+     </div>
+    </div>
+   </div>
+<div class="card">
+    <h3>مقارنة أداء مجموعات الميزات (التقييم على Test Set)</h3>
+    <table class="compare-table">
+     <thead>
+      <tr>
+       <th>الطريقة</th>
+       <th>عدد الميزات</th>
+       <th>المقياس</th>
+       <th>قيمة (متوسط)</th>
+       <th>انحراف معياري</th>
+       <th>زمن التقييم (ثانية)</th>
+      </tr>
+     </thead>
+     <tbody>
+      {% for c in comparisons %}
+      <tr>
+       <td>{{ c.method }}</td>
+       <td>{{ c.num_features }}</td>
+       <td>{{ c.metric if c.metric else "-" }}</td>
+       <td>
+        {{ "%.4f"|format(c.score_mean) if c.score_mean is not none else "-" }}
+       </td>
+       <td>
+        {{ "%.4f"|format(c.score_std) if c.score_std is not none else "-" }}
+       </td>
+       <td>
+        {{ "%.2f"|format(c.time_seconds) if c.time_seconds is not none else "-"
+        }}
+       </td>
+      </tr>
+      {% endfor %}
+     </tbody>
+    </table>
+   </div>
+
+   <div class="chart-container">
+     <h3>مقارنة الأداء النهائي (على Test Set)</h3>
+     <canvas id="scoreChart"></canvas>
+   </div>
+
+   <div class="chart-container">
+     <h3>مقارنة عدد الميزات المختارة</h3>
+     <canvas id="countChart"></canvas>
+   </div>
+   <a class="btn" href="{{ url_for('index') }}">رجوع</a>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chartData = {{ chart_data|tojson }};
+        const colors = [
+            'rgba(255, 99, 132, 0.7)',
+            'rgba(54, 162, 235, 0.7)',
+            'rgba(255, 206, 86, 0.7)',
+            'rgba(75, 192, 192, 0.7)',
+            'rgba(153, 102, 255, 0.7)'
+        ];
+
+
+        const ctxScore = document.getElementById('scoreChart').getContext('2d');
+        new Chart(ctxScore, {
+            type: 'bar',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: 'الأداء (Score)',
+                    data: chartData.scores,
+                    backgroundColor: colors,
+                    borderColor: colors.map(c => c.replace('0.7', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'مقارنة الأداء النهائي (الأعلى أفضل)'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+
+        const ctxCount = document.getElementById('countChart').getContext('2d');
+        new Chart(ctxCount, {
+            type: 'bar',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: 'عدد الميزات',
+                    data: chartData.feature_counts,
+                    backgroundColor: colors,
+                    borderColor: colors.map(c => c.replace('0.7', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'عدد الميزات المختارة (الأقل أفضل، إذا كان الأداء متساوياً)'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    });
+  </script>
+ </body>
+</html>
