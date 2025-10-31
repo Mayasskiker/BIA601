@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>اختيار الميزات - الخوارزمية الجينية</title>
+  <!-- <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"> -->
+  
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo">MegaGA</div>
+    </nav>
+  <div class="background-container">
+        <div class="overlay"></div>
+    </div>
+  <div class="container">
+    <h1> موقع تحليل البيانات الضخمة</h1>
+        <p>استخدام الخوارزمية الجينية لفرز واختيار أفضل الميزات من مجموعة بيانات.</p>
+    
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for message in messages %}
+            <p style="color: red; background: white; padding: 10px; border-radius: 5px;">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="upload-area" id="upload-area">
+      <p>اسحب وأفلت الملف هنا</p>
+    <form method="post" enctype="multipart/form-data">
+      <label>اختر ملف CSV أو Excel</label>
+      <input type="file"  name="dataset" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"  required>
+  <button type="submit" class="upload-btn">اختبار</button>
+    </form>
+  </div>
+    
+  </div>
+</body>
+</html>
