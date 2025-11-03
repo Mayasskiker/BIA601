@@ -147,7 +147,7 @@ def model_based_fitness(df, features, target_col, chrom, sample_n=5000, cv=3, ra
     except Exception:
         return 0.0
 
-def genetic_algorithm_feature_selection_fast(df, features, target_col,
+def genetic_algorithm_feature_selection(df, features, target_col,
                                              pop_size=40, generations=40,
                                              min_features=3, max_features=None,
                                              mutation_rate=0.03, elite_frac=0.12,
